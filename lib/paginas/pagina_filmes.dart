@@ -1,3 +1,4 @@
+import 'package:filmes/paginas/pagina_favoritos.dart';
 import 'package:flutter/material.dart'; // Importa a biblioteca principal do Flutter para usar os widgets do Material Design.
 import 'package:filmes/servicos/tmdb_service.dart'; // Importa o serviço que interage com a API do TMDB.
 import 'pagina_detalhes_filme.dart'; // Importa a página de detalhes do filme.
@@ -11,17 +12,20 @@ class PaginaFilmes extends StatefulWidget {
 }
 
 class _PaginaFilmesState extends State<PaginaFilmes> {
-  late Future<List<dynamic>>
-      _movies; // Declaração da variável que vai armazenar o Future com a lista de filmes.
-  final TMDBServico _tmdbService =
-      TMDBServico(); // Instancia o serviço do TMDB.
+  late Future<List<dynamic>> _movies;
+  final TMDBService _tmdbService = TMDBService();
+  final TextEditingController _searchController = TextEditingController();
+  int _selectedIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _movies = _tmdbService
-        .fetchMovies(); // Carrega os filmes populares na inicialização do estado.
+      // final requestToken =  _tmdbService.getRequestToken();
+      //  _tmdbService.createSession(requestToken);
+      //  _tmdbService.getAccountId(requestToken);
+      _movies = _tmdbService.fetchMovies();
   }
+
 
   // Função para mostrar os detalhes do filme ao clicar em um item da lista.
   void mostrarDetalhes(Map<String, dynamic> filme) {
@@ -46,7 +50,7 @@ class _PaginaFilmesState extends State<PaginaFilmes> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Filmelandia'), // Título da AppBar.
+        title: const Text('Filmelândia'), // Título da AppBar.
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(
               56.0), // Define a altura preferida do campo de pesquisa.
@@ -63,7 +67,7 @@ class _PaginaFilmesState extends State<PaginaFilmes> {
                     Icons.search), // Ícone de pesquisa dentro do campo.
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(
-                      30.0), // Bordas arredondadas para o campo de pesquisa.
+                      20.0), // Bordas arredondadas para o campo de pesquisa.
                 ),
               ),
               onSubmitted:
@@ -107,7 +111,7 @@ class _PaginaFilmesState extends State<PaginaFilmes> {
                       child: Image.network(
                         'https://image.tmdb.org/t/p/w500${movie['poster_path']}', // Carrega a imagem do filme.
                         width: 50,
-                        height: 100,
+                        height: 150,
                         fit: BoxFit.cover,
                       ),
                     ),
@@ -156,6 +160,10 @@ class _PaginaFilmesState extends State<PaginaFilmes> {
             icon: Icon(Icons.search),
             label: 'Pesquisar',
           ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.favorite),
+            label: 'Favoritos',
+          ),
         ],
         onTap: (index) {
           if (index == 1) {
@@ -163,6 +171,14 @@ class _PaginaFilmesState extends State<PaginaFilmes> {
               context: context,
               delegate: FilmeSearchDelegate(
                   _tmdbService), // Abre a barra de pesquisa ao clicar no item "Pesquisar".
+            );
+          } else if (index == 2) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    PaginaFavoritos(), // Navega para a página de detalhes do filme.
+              ),
             );
           }
         },
@@ -172,7 +188,7 @@ class _PaginaFilmesState extends State<PaginaFilmes> {
 }
 
 class FilmeSearchDelegate extends SearchDelegate {
-  final TMDBServico tmdbService; // Referência ao serviço TMDBService.
+  final TMDBService tmdbService; // Referência ao serviço TMDBService.
 
   FilmeSearchDelegate(this.tmdbService);
 

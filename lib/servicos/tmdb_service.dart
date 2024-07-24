@@ -3,13 +3,16 @@ import 'package:flutter_dotenv/flutter_dotenv.dart'; // Importa a biblioteca par
 import 'package:http/http.dart'
     as http; // Importa a biblioteca HTTP para fazer requisições web.
 
-class TMDBServico {
+class TMDBService {
   // Define a URL base da API do TMDB.
   final String _baseUrl = 'https://api.themoviedb.org/3';
   // Obtém a chave da API do TMDB das variáveis de ambiente.
   // O operador ! é o operador de nulidade em Dart. Ele é usado para indicar que o valor acessado não será nulo.
   final String _apiKey = dotenv.env['TMDB_API_KEY']!;
 
+  String? _sessionId;
+  String? _accountId;
+  
   // Método assíncrono para buscar filmes populares.
   /*
   Um Future em Dart é um objeto que representa uma operação assíncrona. 
@@ -18,6 +21,64 @@ class TMDBServico {
   A declaração Future<List<dynamic>> indica que esta função retornará um Future que, quando concluído, 
   resultará em uma lista (List) de objetos de tipo dinâmico (dynamic).
   */
+
+  Future<String> getRequestToken() async {
+    final response = await http
+        .get(Uri.parse('$_baseUrl/authentication/token/new?api_key=$_apiKey'));
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data['request_token'];
+    } else {
+      throw Exception('Erro ao obter token de requisição');
+    }
+  }
+
+Future<void> createSession(String requestToken) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/authentication/session/new?api_key=$_apiKey'),
+      body: json.encode({'request_token': requestToken}),
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      _sessionId = data['session_id'];
+    } else {
+      throw Exception('Erro ao criar sessão');
+    }
+  }
+
+  Future<String> getAccountId(String sessionId) async {
+    final response = await http.get(Uri.parse(
+        '$_baseUrl/3/account?api_key=$_apiKey&session_id=$sessionId'));
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data['id'].toString();
+    } else {
+      throw Exception('Erro ao obter detalhes da conta');
+    }
+  }
+
+  Future<List<dynamic>> listFavorites() async {
+    if (_accountId == null) throw Exception('ID da conta não disponível');
+    // Faz uma requisição GET para a API do TMDB.
+    final response = await http.get(Uri.parse(
+        '$_baseUrl/account/$_accountId/favorite/movies?api_key=$_apiKey&language=pt-BR'));
+
+    // Verifica se a requisição foi bem-sucedida.
+    if (response.statusCode == 200) {
+      // Decodifica o corpo da resposta JSON.
+      final data = json.decode(response.body);
+      // Retorna a lista de filmes.
+      return data['results'];
+    } else {
+      // Lança uma exceção se a requisição falhar.
+      throw Exception('Erro ao carregar o favoritos');
+    }
+  }
+
   Future<List<dynamic>> fetchMovies() async {
     // Faz uma requisição GET para a API do TMDB.
     final response = await http.get(
@@ -38,6 +99,10 @@ class TMDBServico {
   // Método assíncrono para buscar filmes com base em uma query de pesquisa.
   Future<List<dynamic>> searchMovies(String query) async {
     // Faz uma requisição GET para a API do TMDB com a query de pesquisa.
+    if (query == '') {
+      return fetchMovies();
+    }
+
     final response = await http.get(Uri.parse(
         '$_baseUrl/search/movie?api_key=$_apiKey&query=$query&language=pt-BR'));
 

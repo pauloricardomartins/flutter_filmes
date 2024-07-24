@@ -57,7 +57,7 @@ class PaginaDetalhesFilme extends StatelessWidget {
             const SizedBox(
                 height: 8), // Adiciona um espaço vertical de 8 pixels.
             Text(
-              'Gênero: ${TMDBServico().obterNomesGeneros(filme['genre_ids'])}', // Obtém e exibe os nomes dos gêneros do filme.
+              'Gênero: ${TMDBService().obterNomesGeneros(filme['genre_ids'])}', // Obtém e exibe os nomes dos gêneros do filme
               style: const TextStyle(
                 fontSize: 16, // Define o tamanho da fonte como 16 pixels.
                 fontStyle:
